@@ -1,0 +1,445 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>api: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">grt_test/api/api.go (52.9%)</option>
+				
+				<option value="file1">grt_test/main.go (0.0%)</option>
+				
+				<option value="file2">grt_test/safecounter/safecounter.go (100.0%)</option>
+				
+				<option value="file3">grt_test/shapes/shapes.go (100.0%)</option>
+				
+				<option value="file4">grt_test/twosum/twosum.go (85.7%)</option>
+				
+				<option value="file5">grt_test/workerpool/workerpool.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package api
+
+import (
+        "context"
+        "encoding/json"
+        "fmt"
+        "net/http"
+        "time"
+)
+
+// Request defines the expected JSON structure for the input.
+type Request struct {
+        Name string `json:"name"`
+}
+
+// Response defines the expected JSON structure for the output.
+type Response struct {
+        Message string `json:"message"`
+}
+
+var server *http.Server
+
+// HelloHandler handles POST requests to /hello.
+func HelloHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        if r.Method != http.MethodPost </span><span class="cov8" title="1">{
+                http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+                return
+        }</span>
+
+        <span class="cov8" title="1">var req Request
+        err := json.NewDecoder(r.Body).Decode(&amp;req)
+        if err != nil </span><span class="cov0" title="0">{
+                http.Error(w, "Bad Request: Invalid JSON format", http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">if req.Name == "" </span><span class="cov0" title="0">{
+                http.Error(w, "Bad Request: Name is required", http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">resp := Response{
+                Message: fmt.Sprintf("Hello %s", req.Name),
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(http.StatusOK)
+        json.NewEncoder(w).Encode(resp)</span>
+}
+
+// TerminateHandler handles GET requests to /terminate and initiates graceful shutdown.
+func TerminateHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        if r.Method != http.MethodGet </span><span class="cov8" title="1">{
+                http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+                return
+        }</span>
+
+        <span class="cov8" title="1">fmt.Fprintln(w, "Server is shutting down...")
+        fmt.Println("Shutdown signal received via /terminate")
+
+        // Trigger shutdown in a separate goroutine to allow the response to be sent
+        go ShutdownServer()</span>
+}
+
+// ShutdownServer gracefully shuts down the server.
+func ShutdownServer() <span class="cov8" title="1">{
+        if server != nil </span><span class="cov0" title="0">{
+                ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+                defer cancel()
+                if err := server.Shutdown(ctx); err != nil </span><span class="cov0" title="0">{
+                        fmt.Printf("Server Shutdown Failed:%+v\n", err)
+                }</span>
+                <span class="cov0" title="0">fmt.Println("Server gracefully stopped")</span>
+        }
+}
+
+// StartServer starts the server on port 8080.
+func StartServer() <span class="cov0" title="0">{
+        mux := http.NewServeMux()
+        mux.HandleFunc("/hello", HelloHandler)
+        mux.HandleFunc("/terminate", TerminateHandler)
+
+        server = &amp;http.Server{
+                Addr:    ":8080",
+                Handler: mux,
+        }
+
+        fmt.Println("Server starting on port 8080...")
+        if err := server.ListenAndServe(); err != http.ErrServerClosed </span><span class="cov0" title="0">{
+                fmt.Printf("HTTP server ListenAndServe: %v", err)
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package main
+
+import (
+        "bufio"
+        "fmt"
+        "grt_test/api"
+        "grt_test/safecounter"
+        "grt_test/shapes"
+        "grt_test/twosum"
+        "grt_test/workerpool"
+        "os"
+        "strconv"
+        "strings"
+        "sync"
+)
+
+func main() <span class="cov0" title="0">{
+        reader := bufio.NewReader(os.Stdin)
+
+        for </span><span class="cov0" title="0">{
+                fmt.Println("\n--- Golang Practice Modules Menu ---")
+                fmt.Println("1. Basic Concurrency: Worker Pool")
+                fmt.Println("2. Thread-Safety: Safe Counter")
+                fmt.Println("3. Interfaces: Shape Area System")
+                fmt.Println("4. Logic &amp; Map: Two Sum")
+                fmt.Println("5. HTTP Handler: Start JSON API Server")
+                fmt.Println("q. Exit")
+                fmt.Print("Select an option: ")
+
+                input, _ := reader.ReadString('\n')
+                input = strings.TrimSpace(input)
+
+                switch input </span>{
+                case "1":<span class="cov0" title="0">
+                        fmt.Print("Enter number of workers: ")
+                        wStr, _ := reader.ReadString('\n')
+                        w, _ := strconv.Atoi(strings.TrimSpace(wStr))
+                        fmt.Print("Enter number of jobs: ")
+                        jStr, _ := reader.ReadString('\n')
+                        j, _ := strconv.Atoi(strings.TrimSpace(jStr))
+                        fmt.Printf("Running Worker Pool with %d workers and %d jobs...\n", w, j)
+                        workerpool.RunWorkers(w, j)</span>
+
+                case "2":<span class="cov0" title="0">
+                        fmt.Print("Enter number of concurrent increments: ")
+                        nStr, _ := reader.ReadString('\n')
+                        n, _ := strconv.Atoi(strings.TrimSpace(nStr))
+                        counter := safecounter.SafeCounter{}
+                        var wg sync.WaitGroup
+                        fmt.Printf("Incrementing counter %d times concurrently...\n", n)
+                        for i := 0; i &lt; n; i++ </span><span class="cov0" title="0">{
+                                wg.Add(1)
+                                go func() </span><span class="cov0" title="0">{
+                                        defer wg.Done()
+                                        counter.Inc()
+                                }</span>()
+                        }
+                        <span class="cov0" title="0">wg.Wait()
+                        fmt.Printf("Final Counter Value: %d\n", counter.Value())</span>
+
+                case "3":<span class="cov0" title="0">
+                        fmt.Println("Choose Shape: (1) Rectangle (2) Circle")
+                        sChoice, _ := reader.ReadString('\n')
+                        if strings.TrimSpace(sChoice) == "1" </span><span class="cov0" title="0">{
+                                fmt.Print("Enter Width: ")
+                                wS, _ := reader.ReadString('\n')
+                                w, _ := strconv.ParseFloat(strings.TrimSpace(wS), 64)
+                                fmt.Print("Enter Height: ")
+                                hS, _ := reader.ReadString('\n')
+                                h, _ := strconv.ParseFloat(strings.TrimSpace(hS), 64)
+                                shapes.PrintArea(shapes.Rectangle{Width: w, Height: h})
+                        }</span> else<span class="cov0" title="0"> {
+                                fmt.Print("Enter Radius: ")
+                                rS, _ := reader.ReadString('\n')
+                                r, _ := strconv.ParseFloat(strings.TrimSpace(rS), 64)
+                                shapes.PrintArea(shapes.Circle{Radius: r})
+                        }</span>
+
+                case "4":<span class="cov0" title="0">
+                        fmt.Println("Example: nums = [2, 7, 11, 15], target = 9")
+                        nums := []int{2, 7, 11, 15}
+                        target := 9
+                        result := twosum.TwoSum(nums, target)
+                        fmt.Printf("TwoSum result for target %d: %v\n", target, result)</span>
+
+                case "5":<span class="cov0" title="0">
+                        fmt.Println("Starting API Server on :8080...")
+                        fmt.Println("Endpoints:")
+                        fmt.Println("  POST /hello (Body: {\"name\": \"...\"})")
+                        fmt.Println("  GET  /terminate (to shut down via HTTP)")
+
+                        go api.StartServer()
+
+                        fmt.Println("Server is running. Enter 'q' to stop server and return to menu.")
+                        for </span><span class="cov0" title="0">{
+                                stopInput, _ := reader.ReadString('\n')
+                                if strings.TrimSpace(stopInput) == "q" </span><span class="cov0" title="0">{
+                                        api.ShutdownServer()
+                                        break</span>
+                                }
+                        }
+
+                case "q":<span class="cov0" title="0">
+                        fmt.Println("Exiting...")
+                        return</span>
+
+                default:<span class="cov0" title="0">
+                        fmt.Println("Invalid option, try again.")</span>
+                }
+        }
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package safecounter
+
+import (
+        "sync"
+)
+
+// SafeCounter is a thread-safe counter.
+type SafeCounter struct {
+        mu    sync.Mutex
+        count int
+}
+
+// Inc increments the counter by 1.
+func (c *SafeCounter) Inc() <span class="cov8" title="1">{
+        c.mu.Lock()
+        defer c.mu.Unlock()
+        c.count++
+}</span>
+
+// Value returns the current value of the counter.
+func (c *SafeCounter) Value() int <span class="cov8" title="1">{
+        c.mu.Lock()
+        defer c.mu.Unlock()
+        return c.count
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package shapes
+
+import (
+        "fmt"
+        "math"
+)
+
+// Shape is an interface for geometric shapes that can calculate their area.
+type Shape interface {
+        Area() float64
+}
+
+// Rectangle represents a rectangle with width and height.
+type Rectangle struct {
+        Width  float64
+        Height float64
+}
+
+// Area calculates the area of a rectangle.
+func (r Rectangle) Area() float64 <span class="cov8" title="1">{
+        return r.Width * r.Height
+}</span>
+
+// Circle represents a circle with a radius.
+type Circle struct {
+        Radius float64
+}
+
+// Area calculates the area of a circle.
+func (c Circle) Area() float64 <span class="cov8" title="1">{
+        return math.Pi * math.Pow(c.Radius, 2)
+}</span>
+
+// PrintArea prints the area of any given Shape.
+func PrintArea(s Shape) string <span class="cov8" title="1">{
+        area := s.Area()
+        result := fmt.Sprintf("Area: %.2f", area)
+        fmt.Println(result)
+        return result
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package twosum
+
+// TwoSum finds the indices of two numbers in nums that add up to target.
+// It uses a map to achieve O(n) time complexity.
+func TwoSum(nums []int, target int) []int <span class="cov8" title="1">{
+        seen := make(map[int]int)
+
+        for i, num := range nums </span><span class="cov8" title="1">{
+                complement := target - num
+                if idx, ok := seen[complement]; ok </span><span class="cov8" title="1">{
+                        return []int{idx, i}
+                }</span>
+                <span class="cov8" title="1">seen[num] = i</span>
+        }
+
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package workerpool
+
+import (
+        "fmt"
+        "sync"
+        "time"
+)
+
+// RunWorkers creates numWorkers to process numJobs using a worker pool pattern.
+func RunWorkers(numWorkers int, numJobs int) <span class="cov8" title="1">{
+        jobs := make(chan int, numJobs)
+        var wg sync.WaitGroup
+
+        // Start workers
+        for w := 1; w &lt;= numWorkers; w++ </span><span class="cov8" title="1">{
+                wg.Add(1)
+                go func(id int) </span><span class="cov8" title="1">{
+                        defer wg.Done()
+                        for job := range jobs </span><span class="cov8" title="1">{
+                                fmt.Printf("Worker [%d] processing job [%d]\n", id, job)
+                                time.Sleep(1 * time.Second)
+                        }</span>
+                }(w)
+        }
+
+        // Send jobs
+        <span class="cov8" title="1">for j := 1; j &lt;= numJobs; j++ </span><span class="cov8" title="1">{
+                jobs &lt;- j
+        }</span>
+        <span class="cov8" title="1">close(jobs)
+
+        // Wait for all workers to finish
+        wg.Wait()
+
+        // All workers have completed processing
+        fmt.Println("All jobs have been processed.")</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
